@@ -20,12 +20,16 @@ station_ids = df['id'].tolist()
 station_ids = ['_' + str(x) + ' INT' for x in station_ids]
 with con:
    cur.execute("CREATE TABLE available_bikes ( execution_time INT, " +  ", ".join(station_ids) + ");")
-exec_time = parse(r.json()['executionTime'])
-with con:
-   cur.execute('INSERT INTO available_bikes (execution_time) VALUES (?)', (exec_time.strftime('%s'),))
-id_bikes = collections.defaultdict(int)
-for station in r.json()['stationBeanList']:
-   id_bikes[station['id']] = station['availableBikes']
-with con:
-   for k, v in id_bikes.iteritems():
-      cur.execute("UPDATE available_bikes SET _" + str(k) + " = " + str(v) + " WHERE execution_time = " + exec_time.strftime('%s') + ";")
+
+for i in range(60):
+   exec_time = parse(r.json()['executionTime'])
+   with con:
+      cur.execute('INSERT INTO available_bikes (execution_time) VALUES (?)', (exec_time.strftime('%s'),))
+   id_bikes = collections.defaultdict(int)
+   for station in r.json()['stationBeanList']:
+      id_bikes[station['id']] = station['availableBikes']
+   with con:
+      for k, v in id_bikes.iteritems():
+         cur.execute("UPDATE available_bikes SET _" + str(k) + " = " + str(v) + " WHERE execution_time = " + exec_time.strftime('%s') + ";")
+         cur.execute(sql)
+   time.sleep(60)
