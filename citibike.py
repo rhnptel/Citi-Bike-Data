@@ -5,22 +5,35 @@ import sqlite3 as lite
 import time
 from dateutil.parser import parse 
 import collections
+import sqlite3 as lite
+
+#get citibike data
 r = requests.get('http://www.citibikenyc.com/stations/json')
 df = json_normalize(r.json()['stationBeanList'])
-import sqlite3 as lite
+
+#create database
 con = lite.connect('citi_bike.db')
 cur = con.cursor()
+
+# create table and insert data
 with con:
    cur.execute('CREATE TABLE citibike_reference (id INT PRIMARY KEY, totalDocks INT, city TEXT, altitude INT, stAddress2 TEXT, longitude NUMERIC, postalCode TEXT, testStation TEXT, stAddress1 TEXT, stationName TEXT, landMark TEXT, latitude NUMERIC, location TEXT )')
+
 sql = "INSERT INTO citibike_reference (id, totalDocks, city, altitude, stAddress2, longitude, postalCode, testStation, stAddress1, stationName, landMark, latitude, location) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)"
+
 with con:
    for station in r.json()['stationBeanList']:
       cur.execute(sql,(station['id'],station['totalDocks'],station['city'],station['altitude'],station['stAddress2'],station['longitude'],station['postalCode'],station['testStation'],station['stAddress1'],station['stationName'],station['landMark'],station['latitude'],station['location']))
+
+      
+#create the available bikes table
 station_ids = df['id'].tolist() 
 station_ids = ['_' + str(x) + ' INT' for x in station_ids]
+
 with con:
    cur.execute("CREATE TABLE available_bikes ( execution_time INT, " +  ", ".join(station_ids) + ");")
 
+#insert an hour of data into available bikes table
 for i in range(60):
    exec_time = parse(r.json()['executionTime'])
    with con:
